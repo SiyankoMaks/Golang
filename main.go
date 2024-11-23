@@ -1,6 +1,6 @@
 package main
 import (
-    a "Golang/packages/atomic"
+    a "github.com/SiyankoMaks/Golang/tree/main/packages/atomic"
 )
 
 func main() {
