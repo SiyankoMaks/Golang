@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -12,46 +11,75 @@ type User struct {
 	Username string `json:"username"`
 }
 
-var users = make(map[string]User)
-
-// Шаблон HTML для главной страницы с кнопками
-var indexHTML = `
+var (
+	users    = make(map[string]User)
+	port     = ":8080"
+	indexHTML = `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>User Management</title>
+    <title>Управление Пользователями</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #06283D;
+            color: #DFF6FF;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #47B5FF;
+        }
+        button {
+            background-color: #47B5FF;
+            color: #06283D;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover {
+            background-color: #256D85;
+        }
+        input {
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #47B5FF;
+            border-radius: 5px;
+        }
+        #userList {
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>User Management</h1>
+    <h1>Управление Пользователями</h1>
 
-    <!-- Кнопка для просмотра всех пользователей -->
-    <button onclick="viewUsers()">View Users</button>
+    <button onclick="viewUsers()">Просмотреть пользователей</button>
     <div id="userList"></div>
 
-    <!-- Форма для добавления пользователя -->
-    <h2>Add User</h2>
-    <input type="text" id="username" placeholder="Enter username">
-    <button onclick="addUser()">Add User</button>
+    <h2>Добавить пользователя</h2>
+    <input type="text" id="username" placeholder="Введите имя пользователя">
+    <button onclick="addUser()">Добавить</button>
 
-    <!-- Форма для удаления пользователя -->
-    <h2>Delete User</h2>
-    <input type="text" id="deleteUsername" placeholder="Enter username to delete">
-    <button onclick="deleteUser()">Delete User</button>
+    <h2>Удалить пользователя</h2>
+    <input type="text" id="deleteUsername" placeholder="Введите имя пользователя для удаления">
+    <button onclick="deleteUser()">Удалить</button>
 
     <script>
         function viewUsers() {
             fetch('/users')
                 .then(response => response.json())
                 .then(data => {
-                    let userList = '<h3>Users:</h3><ul>';
+                    let userList = '<h3>Список пользователей:</h3><ul>';
                     data.forEach(user => {
                         userList += '<li>' + user.username + '</li>';
                     });
                     userList += '</ul>';
                     document.getElementById('userList').innerHTML = userList;
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => console.error('Ошибка:', error));
         }
 
         function addUser() {
@@ -66,7 +94,7 @@ var indexHTML = `
                 alert(data);
                 viewUsers();
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => console.error('Ошибка:', error));
         }
 
         function deleteUser() {
@@ -79,12 +107,13 @@ var indexHTML = `
                 alert(data);
                 viewUsers();
             })
-            .catch(error => console.error('Error:', error));
+            .catch(error => console.error('Ошибка:', error));
         }
     </script>
 </body>
 </html>
 `
+)
 
 func getUsers(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -99,9 +128,10 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	username := strings.TrimPrefix(r.URL.Path, "/users/")
 	if _, exists := users[username]; exists {
 		delete(users, username)
-		fmt.Fprintf(w, "User %s deleted", username)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Пользователь успешно удалён"))
 	} else {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "Пользователь не найден", http.StatusNotFound)
 	}
 }
 
@@ -111,19 +141,21 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if _, exists := users[newUser.Username]; exists {
+		http.Error(w, "Пользователь уже существует", http.StatusConflict)
+		return
+	}
 	users[newUser.Username] = newUser
-	fmt.Fprintf(w, "User %s added", newUser.Username)
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte("Пользователь успешно добавлен"))
 }
 
 func main() {
-	// Обработчик для главной страницы
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl := template.New("index")
-		tmpl, _ = tmpl.Parse(indexHTML)
+		tmpl := template.Must(template.New("index").Parse(indexHTML))
 		tmpl.Execute(w, nil)
 	})
 
-	// Обработчик для пути /users
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -131,15 +163,16 @@ func main() {
 		case http.MethodPost:
 			addUser(w, r)
 		default:
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
 		}
 	})
 
-	// Обработчик для пути /users/{username}
 	http.HandleFunc("/users/", deleteUser)
 
-	fmt.Println("Server running at http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	// Логика запуска сервера
+	serverAddress := "http://localhost" + port
+	println("Сервер запущен по адресу", serverAddress)
+	if err := http.ListenAndServe(port, nil); err != nil {
 		panic(err)
 	}
 }
