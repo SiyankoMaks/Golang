@@ -150,29 +150,29 @@ func addUser(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Пользователь успешно добавлен"))
 }
 
-// func main() {
-// 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-// 		tmpl := template.Must(template.New("index").Parse(indexHTML))
-// 		tmpl.Execute(w, nil)
-// 	})
+func main() {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		tmpl := template.Must(template.New("index").Parse(indexHTML))
+		tmpl.Execute(w, nil)
+	})
 
-// 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-// 		switch r.Method {
-// 		case http.MethodGet:
-// 			getUsers(w, r)
-// 		case http.MethodPost:
-// 			addUser(w, r)
-// 		default:
-// 			http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
-// 		}
-// 	})
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getUsers(w, r)
+		case http.MethodPost:
+			addUser(w, r)
+		default:
+			http.Error(w, "Метод не разрешён", http.StatusMethodNotAllowed)
+		}
+	})
 
-// 	http.HandleFunc("/users/", deleteUser)
+	http.HandleFunc("/users/", deleteUser)
 
-// 	// Логика запуска сервера
-// 	serverAddress := "http://localhost" + port
-// 	println("Сервер запущен по адресу", serverAddress)
-// 	if err := http.ListenAndServe(port, nil); err != nil {
-// 		panic(err)
-// 	}
-// }
+	// Логика запуска сервера
+	serverAddress := "http://localhost" + port
+	println("Сервер запущен по адресу", serverAddress)
+	if err := http.ListenAndServe(port, nil); err != nil {
+		panic(err)
+	}
+}
