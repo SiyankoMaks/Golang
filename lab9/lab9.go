@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
-	"html/template"
 	"net/http"
 )
 
@@ -120,14 +119,14 @@ func main() {
 
 	// Главная страница
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl := template.Must(template.New("index").Parse(indexHTML))
-		tmpl.Execute(w, nil)
+		w.Header().Set("Content-Type", "text/html")
+		w.Write([]byte(indexHTML))
 	})
 
 	// Маршрут для пользователей
 	r.Route("/users", func(r chi.Router) {
-		r.Get("/", getUsers)          // Просмотр всех пользователей
-		r.Post("/", addUser)          // Добавление пользователя
+		r.Get("/", getUsers)                // Просмотр всех пользователей
+		r.Post("/", addUser)                // Добавление пользователя
 		r.Delete("/{username}", deleteUser) // Удаление пользователя
 	})
 

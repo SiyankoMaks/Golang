@@ -39,7 +39,7 @@ func BenchmarkAtomic(b *testing.B) {
 		}()
 
 		for atomic.LoadInt32(&done) == 0 {
-			time.Sleep(3 * time.Millisecond)
+			time.Sleep(time.Nanosecond)
 		}
 	}
 }
